@@ -22,6 +22,8 @@ const frames = [
   },
 ];
 
+const frameWords = frames.map((frame) => frame.title.split(" "));
+
 gsap.registerPlugin(ScrollTrigger);
 
 export function HeroSection() {
@@ -40,17 +42,24 @@ export function HeroSection() {
       const progressKnob = section.querySelector<HTMLElement>("[data-progress-knob]");
       const counter = section.querySelector<HTMLElement>("[data-counter]");
       const framesList = gsap.utils.toArray<HTMLElement>("[data-frame]");
+      const frameChars = framesList.map((frame) =>
+        gsap.utils.toArray<HTMLElement>("[data-char]", frame)
+      );
       const blobs = gsap.utils.toArray<HTMLElement>("[data-blob]");
       const glow = section.querySelector<HTMLElement>("[data-glow]");
+      const dimOpacity = 0.26;
 
       gsap.set(framesList, {
         autoAlpha: 0,
-        yPercent: 12,
+        yPercent: 0,
       });
 
       gsap.set(framesList[0], {
         autoAlpha: 1,
-        yPercent: 0,
+      });
+
+      gsap.set(frameChars.flat(), {
+        opacity: dimOpacity,
       });
 
       const timeline = gsap.timeline({
@@ -160,65 +169,59 @@ export function HeroSection() {
           0
         );
 
-      const stageTimeline = gsap.timeline({
-        scrollTrigger: {
-          trigger: section,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 1.1,
-          onUpdate: (self) => {
-            const frameIndex = Math.min(
-              frames.length - 1,
-              Math.floor(self.progress * frames.length)
-            );
+      const updateStage = (progress: number) => {
+        const stageStart = 0.16;
+        const stageEnd = 0.94;
+        const stageProgress = gsap.utils.clamp(
+          0,
+          1,
+          (progress - stageStart) / (stageEnd - stageStart)
+        );
+        const activeIndex = Math.min(
+          frames.length - 1,
+          Math.floor(stageProgress * frames.length)
+        );
+        const segment = 1 / frames.length;
+        const activeProgress = gsap.utils.clamp(
+          0,
+          1,
+          (stageProgress - activeIndex * segment) / segment
+        );
+        const revealProgress =
+          activeIndex === frames.length - 1 && stageProgress >= 0.999
+            ? 1
+            : gsap.utils.clamp(0, 1, activeProgress / 0.88);
+        const revealCount = Math.round(
+          frameChars[activeIndex].length * revealProgress
+        );
 
-            if (counter) {
-              counter.textContent = frames[frameIndex].index;
-            }
-          },
-        },
-      });
+        framesList.forEach((frame, index) => {
+          gsap.set(frame, {
+            autoAlpha: index === activeIndex ? 1 : 0,
+          });
 
-      framesList.forEach((frame, index) => {
-        const start = 0.16 + index * 0.26;
-        const middle = start + 0.12;
-        const end = start + 0.24;
+          frameChars[index].forEach((char, charIndex) => {
+            gsap.set(char, {
+              opacity:
+                index === activeIndex && charIndex < revealCount ? 1 : dimOpacity,
+            });
+          });
+        });
 
-        stageTimeline
-          .to(
-            frame,
-            {
-              autoAlpha: 1,
-              yPercent: 0,
-              duration: 0.12,
-            },
-            start
-          )
-          .to(
-            frame,
-            {
-              autoAlpha: index === framesList.length - 1 ? 1 : 0,
-              yPercent: index === framesList.length - 1 ? 0 : -10,
-              duration: 0.12,
-            },
-            middle
-          );
-
-        if (index < framesList.length - 1) {
-          stageTimeline.fromTo(
-            framesList[index + 1],
-            {
-              autoAlpha: 0,
-              yPercent: 12,
-            },
-            {
-              autoAlpha: 0,
-              yPercent: 12,
-              duration: 0.001,
-            },
-            end - 0.001
-          );
+        if (counter) {
+          counter.textContent = frames[activeIndex].index;
         }
+      };
+
+      updateStage(0);
+
+      ScrollTrigger.create({
+        trigger: section,
+        start: "top top",
+        end: "bottom bottom",
+        onUpdate: (self) => {
+          updateStage(self.progress);
+        },
       });
     }, section);
 
@@ -293,9 +296,31 @@ export function HeroSection() {
                   <span>03</span>
                 </aside>
                 <div className="hero-stage">
-                  {frames.map((frame) => (
-                    <p className="hero-frame" data-frame key={frame.index}>
-                      {frame.title}
+                  {frames.map((frame, frameIndex) => (
+                    <p
+                      aria-label={frame.title}
+                      className="hero-frame"
+                      data-frame
+                      key={frame.index}
+                    >
+                      <span aria-hidden="true">
+                        {frameWords[frameIndex].map((word, wordIndex) => (
+                          <span className="hero-frame-word-wrap" key={wordIndex}>
+                            <span className="hero-frame-word">
+                              {Array.from(word).map((char, charIndex) => (
+                                <span
+                                  className="hero-frame-char"
+                                  data-char
+                                  key={`${wordIndex}-${charIndex}`}
+                                >
+                                  {char}
+                                </span>
+                              ))}
+                            </span>
+                            {wordIndex < frameWords[frameIndex].length - 1 ? " " : null}
+                          </span>
+                        ))}
+                      </span>
                     </p>
                   ))}
                 </div>
