@@ -566,7 +566,8 @@ main {
 
   .hero-frame {
     left: 0;
-    width: min(100%, 12.5ch);
+    width: 100%;
+    max-width: none;
     font-size: clamp(1.8rem, 8vw, 2.6rem);
     line-height: 1.04;
   }
