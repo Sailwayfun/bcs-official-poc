@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
+import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -24,19 +25,19 @@ const frames = [
 
 const frameWords = frames.map((frame) => frame.title.split(" "));
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 export function HeroSection() {
   const sectionRef = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
-    const section = sectionRef.current;
+  useGSAP(
+    () => {
+      const section = sectionRef.current;
 
-    if (!section) {
-      return;
-    }
+      if (!section) {
+        return;
+      }
 
-    const ctx = gsap.context(() => {
       const intro = gsap.utils.toArray<HTMLElement>("[data-intro]");
       const progressLine = section.querySelector<HTMLElement>("[data-progress-line]");
       const progressKnob = section.querySelector<HTMLElement>("[data-progress-knob]");
@@ -214,8 +215,7 @@ export function HeroSection() {
 
           frameChars[index].forEach((char, charIndex) => {
             gsap.set(char, {
-              opacity:
-                started && charIndex < revealCount ? 1 : dimOpacity,
+              opacity: started && charIndex < revealCount ? 1 : dimOpacity,
             });
           });
         });
@@ -235,12 +235,9 @@ export function HeroSection() {
           updateStage(self.progress);
         },
       });
-    }, section);
-
-    return () => {
-      ctx.revert();
-    };
-  }, []);
+    },
+    { scope: sectionRef }
+  );
 
   return (
     <>
