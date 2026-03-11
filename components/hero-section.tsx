@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { SplitText } from "gsap/SplitText";
 
 const frames = [
   {
@@ -23,10 +24,9 @@ const frames = [
   },
 ];
 
-const frameWords = frames.map((frame) => frame.title.split(" "));
 const heroVideoSrc = "/videos/hero-background.mp4";
 
-gsap.registerPlugin(useGSAP, ScrollTrigger);
+gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
 
 export function HeroSection() {
   const sectionRef = useRef<HTMLElement | null>(null);
@@ -44,12 +44,7 @@ export function HeroSection() {
       const progressKnob = section.querySelector<HTMLElement>("[data-progress-knob]");
       const counter = section.querySelector<HTMLElement>("[data-counter]");
       const framesList = gsap.utils.toArray<HTMLElement>("[data-frame]");
-      const frameChars = framesList.map((frame) =>
-        gsap.utils.toArray<HTMLElement>("[data-char]", frame)
-      );
-      let frameLines = framesList.map(() => [] as HTMLElement[][]);
-      let frameLineStates = framesList.map(() => [] as { opacity: number; y: number }[]);
-      const frameCharProgress = framesList.map(() => 0);
+      const frameTextNodes = gsap.utils.toArray<HTMLElement>("[data-frame-text]");
       const blobs = gsap.utils.toArray<HTMLElement>("[data-blob]");
       const glow = section.querySelector<HTMLElement>("[data-glow]");
       const charFadeValue = 0.4;
@@ -59,139 +54,69 @@ export function HeroSection() {
       let activeFrameIndex = 0;
       let currentProgress = 0;
       let entranceDelayCall: gsap.core.Tween | null = null;
-      const syncFrameLines = () => {
-        frameLines = frameChars.map((chars) => {
-          const lines: HTMLElement[][] = [];
-          let currentLine: HTMLElement[] = [];
-          let currentTop: number | null = null;
+      let frameSplits: SplitText[] = [];
+      let cancelled = false;
 
-          chars.forEach((char) => {
-            const top = Math.round(char.offsetTop);
+      const resetFrameChars = (frameIndex: number) => {
+        const split = frameSplits[frameIndex];
 
-            if (currentTop === null || Math.abs(top - currentTop) <= 2) {
-              currentLine.push(char);
-              currentTop = currentTop ?? top;
-              return;
-            }
-
-            lines.push(currentLine);
-            currentLine = [char];
-            currentTop = top;
-          });
-
-          if (currentLine.length > 0) {
-            lines.push(currentLine);
-          }
-
-          return lines;
-        });
-        frameLineStates = frameLines.map((lines, frameIndex) =>
-          lines.map(() => ({
-            opacity: frameIndex === activeFrameIndex ? 1 : 0,
-            y: frameIndex === activeFrameIndex ? 0 : 30,
-          }))
-        );
-      };
-      const renderFrameChars = (frameIndex: number) => {
-        const lines = frameLines[frameIndex];
-        const lineStates = frameLineStates[frameIndex];
-        const chars = frameChars[frameIndex];
-        const reveal = frameCharProgress[frameIndex] * chars.length;
-        const revealIndex = Math.floor(reveal);
-        const revealFraction = reveal - revealIndex;
-        let charCursor = 0;
-
-        lines.forEach((lineChars, lineIndex) => {
-          const lineState = lineStates[lineIndex] ?? { opacity: 0, y: 30 };
-
-          lineChars.forEach((char) => {
-            let targetOpacity = charFadeValue;
-
-            if (charCursor < revealIndex) {
-              targetOpacity = 1;
-            } else if (charCursor === revealIndex) {
-              targetOpacity = charFadeValue + revealFraction * (1 - charFadeValue);
-            }
-
-            gsap.set(char, {
-              opacity: lineState.opacity * targetOpacity,
-              y: lineState.y,
-            });
-            charCursor += 1;
-          });
-        });
-      };
-      const renderFrames = () => {
-        framesList.forEach((frame, frameIndex) => {
-          const hasVisibleLines = frameLineStates[frameIndex].some(
-            (line) => line.opacity > 0.001
-          );
-
-          gsap.set(frame, {
-            autoAlpha: frameIndex === activeFrameIndex || hasVisibleLines ? 1 : 0,
-            x: 0,
-            y: 0,
-            scale: 1,
-          });
-
-          renderFrameChars(frameIndex);
-        });
-      };
-      const animateFrameChange = (fromIndex: number, toIndex: number) => {
-        entranceDelayCall?.kill();
-        entranceDelayCall = null;
-
-        if (fromIndex >= 0) {
-          const outgoingLines = frameLineStates[fromIndex];
-
-          gsap.killTweensOf(outgoingLines);
-          outgoingLines.forEach((lineState, lineIndex) => {
-            gsap.to(lineState, {
-              opacity: 0,
-              y: -30,
-              duration: 0.4,
-              ease: "power4.out",
-              delay: lineIndex * lineStagger,
-              onUpdate: renderFrames,
-              onComplete:
-                lineIndex === outgoingLines.length - 1
-                  ? () => {
-                      if (activeFrameIndex !== fromIndex) {
-                        gsap.set(framesList[fromIndex], { autoAlpha: 0 });
-                      }
-                    }
-                  : undefined,
-            });
-          });
+        if (!split) {
+          return;
         }
 
-        entranceDelayCall = gsap.delayedCall(transitionGap, () => {
-          if (toIndex < 0) {
-            return;
-          }
-
-          const incomingLines = frameLineStates[toIndex];
-
-          gsap.killTweensOf(incomingLines);
-          gsap.set(framesList[toIndex], { autoAlpha: 1 });
-          incomingLines.forEach((lineState) => {
-            lineState.opacity = 0;
-            lineState.y = 30;
-          });
-          renderFrames();
-
-          incomingLines.forEach((lineState, lineIndex) => {
-            gsap.to(lineState, {
-              opacity: 1,
-              y: 0,
-              duration: transitionDuration,
-              ease: "power4.out",
-              delay: lineIndex * lineStagger,
-              onUpdate: renderFrames,
-            });
-          });
+        gsap.set(split.chars, {
+          opacity: charFadeValue,
+          y: 0,
         });
       };
+
+      const applyActiveCharProgress = (frameIndex: number, progress: number) => {
+        const split = frameSplits[frameIndex];
+
+        if (!split) {
+          return;
+        }
+
+        const reveal = Math.min(progress, 1) * split.chars.length;
+        const revealIndex = Math.floor(reveal);
+        const revealFraction = reveal - revealIndex;
+
+        split.chars.forEach((char, charIndex) => {
+          let opacity = charFadeValue;
+
+          if (charIndex < revealIndex) {
+            opacity = 1;
+          } else if (charIndex === revealIndex) {
+            opacity = charFadeValue + revealFraction * (1 - charFadeValue);
+          }
+
+          gsap.set(char, { opacity });
+        });
+      };
+
+      const createFrameSplits = () => {
+        frameSplits.forEach((split) => split.revert());
+
+        frameSplits = frameTextNodes.map((node, frameIndex) => {
+          const split = SplitText.create(node, {
+            type: "lines,chars",
+            linesClass: "hero-frame-line",
+            charsClass: "hero-frame-char",
+            mask: "lines",
+            aria: "hidden",
+          });
+
+          gsap.set(split.lines, {
+            autoAlpha: frameIndex === activeFrameIndex ? 1 : 0,
+            y: frameIndex === activeFrameIndex ? 0 : 30,
+          });
+
+          resetFrameChars(frameIndex);
+
+          return split;
+        });
+      };
+
       const resetFrames = () => {
         framesList.forEach((frame, frameIndex) => {
           gsap.set(frame, {
@@ -201,7 +126,107 @@ export function HeroSection() {
             scale: 1,
           });
         });
-        renderFrames();
+
+        frameSplits.forEach((split, frameIndex) => {
+          gsap.killTweensOf(split.lines);
+          gsap.set(split.lines, {
+            autoAlpha: frameIndex === activeFrameIndex ? 1 : 0,
+            y: frameIndex === activeFrameIndex ? 0 : 30,
+          });
+          resetFrameChars(frameIndex);
+        });
+      };
+
+      const animateFrameChange = (fromIndex: number, toIndex: number) => {
+        entranceDelayCall?.kill();
+        entranceDelayCall = null;
+
+        if (fromIndex >= 0 && frameSplits[fromIndex]) {
+          const outgoingSplit = frameSplits[fromIndex];
+
+          gsap.killTweensOf(outgoingSplit.lines);
+          gsap.to(outgoingSplit.lines, {
+            autoAlpha: 0,
+            y: -30,
+            ease: "power4.out",
+            duration: 0.4,
+            stagger: lineStagger,
+            onComplete: () => {
+              if (activeFrameIndex !== fromIndex) {
+                gsap.set(framesList[fromIndex], { autoAlpha: 0 });
+              }
+            },
+          });
+        }
+
+        entranceDelayCall = gsap.delayedCall(transitionGap, () => {
+          const incomingSplit = frameSplits[toIndex];
+
+          if (!incomingSplit) {
+            return;
+          }
+
+          gsap.set(framesList[toIndex], { autoAlpha: 1 });
+          gsap.killTweensOf(incomingSplit.lines);
+          gsap.set(incomingSplit.lines, {
+            autoAlpha: 0,
+            y: 30,
+          });
+          resetFrameChars(toIndex);
+
+          gsap.to(incomingSplit.lines, {
+            autoAlpha: 1,
+            y: 0,
+            ease: "power4.out",
+            duration: transitionDuration,
+            stagger: lineStagger,
+          });
+        });
+      };
+
+      const updateStage = (progress: number) => {
+        currentProgress = progress;
+
+        const stageStart = 0.26;
+        const stageEnd = 0.965;
+        const stageProgress = gsap.utils.clamp(
+          0,
+          1,
+          (progress - stageStart) / (stageEnd - stageStart)
+        );
+        let nextIndex = Math.floor(stageProgress * frames.length + 1e-6);
+
+        nextIndex = Math.max(0, Math.min(frames.length - 1, nextIndex));
+
+        if (nextIndex !== activeFrameIndex) {
+          const previousIndex = activeFrameIndex;
+
+          activeFrameIndex = nextIndex;
+          animateFrameChange(previousIndex, nextIndex);
+        }
+
+        applyActiveCharProgress(
+          nextIndex,
+          Math.min(stageProgress * frames.length - nextIndex, 1 / 1.5) * 1.5
+        );
+
+        if (counter) {
+          counter.textContent = frames[nextIndex].index;
+        }
+      };
+
+      const initialiseFrameText = async () => {
+        if ("fonts" in document) {
+          await document.fonts.ready;
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        createFrameSplits();
+        resetFrames();
+        updateStage(currentProgress);
       };
 
       gsap.set(framesList, {
@@ -212,14 +237,6 @@ export function HeroSection() {
       gsap.set(framesList[0], {
         autoAlpha: 1,
       });
-
-      gsap.set(frameChars.flat(), {
-        opacity: 0,
-        y: 30,
-      });
-
-      syncFrameLines();
-      resetFrames();
 
       const timeline = gsap.timeline({
         defaults: {
@@ -338,41 +355,11 @@ export function HeroSection() {
           0
         );
 
-      const updateStage = (progress: number) => {
-        currentProgress = progress;
-
-        const stageStart = 0.26;
-        const stageEnd = 0.965;
-        const stageProgress = gsap.utils.clamp(
-          0,
-          1,
-          (progress - stageStart) / (stageEnd - stageStart)
-        );
-        let nextIndex = Math.floor(stageProgress * frames.length + 1e-6);
-
-        nextIndex = Math.max(0, Math.min(frames.length - 1, nextIndex));
-        frameCharProgress[nextIndex] =
-          Math.min(stageProgress * frames.length - nextIndex, 1 / 1.5) * 1.5;
-
-        if (nextIndex !== activeFrameIndex) {
-          const previousIndex = activeFrameIndex;
-
-          activeFrameIndex = nextIndex;
-          animateFrameChange(previousIndex, nextIndex);
-        }
-
-        renderFrames();
-
-        if (counter) {
-          counter.textContent = frames[nextIndex].index;
-        }
-      };
-
-      updateStage(0);
+      initialiseFrameText();
 
       const handleRefresh = () => {
         entranceDelayCall?.kill();
-        syncFrameLines();
+        createFrameSplits();
         resetFrames();
         updateStage(currentProgress);
       };
@@ -389,7 +376,9 @@ export function HeroSection() {
       });
 
       return () => {
+        cancelled = true;
         entranceDelayCall?.kill();
+        frameSplits.forEach((split) => split.revert());
         ScrollTrigger.removeEventListener("refresh", handleRefresh);
       };
     },
@@ -473,30 +462,15 @@ export function HeroSection() {
                   <span>03</span>
                 </aside>
                 <div className="hero-stage">
-                  {frames.map((frame, frameIndex) => (
+                  {frames.map((frame) => (
                     <p
                       aria-label={frame.title}
                       className="hero-frame"
                       data-frame
                       key={frame.index}
                     >
-                      <span aria-hidden="true">
-                        {frameWords[frameIndex].map((word, wordIndex) => (
-                          <span className="hero-frame-word-wrap" key={wordIndex}>
-                            <span className="hero-frame-word">
-                              {Array.from(word).map((char, charIndex) => (
-                                <span
-                                  className="hero-frame-char"
-                                  data-char
-                                  key={`${wordIndex}-${charIndex}`}
-                                >
-                                  {char}
-                                </span>
-                              ))}
-                            </span>
-                            {wordIndex < frameWords[frameIndex].length - 1 ? " " : null}
-                          </span>
-                        ))}
+                      <span aria-hidden="true" className="hero-frame-text" data-frame-text>
+                        {frame.title}
                       </span>
                     </p>
                   ))}

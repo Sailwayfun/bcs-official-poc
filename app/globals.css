@@ -396,19 +396,24 @@ main {
   will-change: transform, opacity;
 }
 
-.hero-frame-word-wrap {
-  display: inline;
+.hero-frame-text {
+  display: block;
 }
 
-.hero-frame-word {
-  display: inline-flex;
-  white-space: nowrap;
+.hero-frame-line {
+  display: block;
+  will-change: transform, opacity;
 }
 
 .hero-frame-char {
   display: inline-block;
-  opacity: 0.26;
-  will-change: opacity;
+  opacity: 0.4;
+  will-change: transform, opacity;
+}
+
+.hero-frame-line-mask {
+  clip-path: inset(-0.12em 0);
+  overflow: clip;
 }
 
 .after-hero {
