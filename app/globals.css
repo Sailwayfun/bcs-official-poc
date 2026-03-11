@@ -372,6 +372,8 @@ main {
   color: rgb(248, 245, 240);
   text-align: right;
   text-wrap: balance;
+  transform-origin: top right;
+  will-change: transform, opacity;
 }
 
 .hero-frame-word-wrap {

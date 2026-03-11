@@ -48,6 +48,11 @@ export function HeroSection() {
       const blobs = gsap.utils.toArray<HTMLElement>("[data-blob]");
       const glow = section.querySelector<HTMLElement>("[data-glow]");
       const dimOpacity = 0.26;
+      const springOut = (value: number) => {
+        const t = gsap.utils.clamp(0, 1, value);
+
+        return 1 - Math.exp(-4.25 * t) * Math.cos(10.5 * t);
+      };
 
       gsap.set(framesList, {
         autoAlpha: 0,
@@ -182,28 +187,35 @@ export function HeroSection() {
           Math.floor(stageProgress * frames.length)
         );
         const segment = 1 / frames.length;
-        const activeProgress = gsap.utils.clamp(
-          0,
-          1,
-          (stageProgress - activeIndex * segment) / segment
-        );
-        const revealProgress =
-          activeIndex === frames.length - 1 && stageProgress >= 0.999
-            ? 1
-            : gsap.utils.clamp(0, 1, activeProgress / 0.88);
-        const revealCount = Math.round(
-          frameChars[activeIndex].length * revealProgress
-        );
 
         framesList.forEach((frame, index) => {
+          const localProgress = (stageProgress - index * segment) / segment;
+          const started = localProgress >= 0;
+          const entranceProgress = gsap.utils.clamp(0, 1, localProgress / 0.44);
+          const exitProgress = gsap.utils.clamp(0, 1, (localProgress - 0.74) / 0.26);
+          const springProgress = springOut(entranceProgress);
+          const frameOpacity = started ? 1 - exitProgress : 0;
+          const x = gsap.utils.interpolate(16, 0, springProgress) + exitProgress * 6;
+          const y = gsap.utils.interpolate(72, 0, springProgress) - exitProgress * 24;
+          const scale =
+            gsap.utils.interpolate(0.952, 1, springProgress) - exitProgress * 0.016;
+          const revealProgress =
+            localProgress >= 1
+              ? 1
+              : gsap.utils.clamp(0, 1, localProgress / 0.84);
+          const revealCount = Math.round(frameChars[index].length * revealProgress);
+
           gsap.set(frame, {
-            autoAlpha: index === activeIndex ? 1 : 0,
+            autoAlpha: frameOpacity,
+            x,
+            y,
+            scale,
           });
 
           frameChars[index].forEach((char, charIndex) => {
             gsap.set(char, {
               opacity:
-                index === activeIndex && charIndex < revealCount ? 1 : dimOpacity,
+                started && charIndex < revealCount ? 1 : dimOpacity,
             });
           });
         });
