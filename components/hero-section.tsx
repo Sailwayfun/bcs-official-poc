@@ -50,11 +50,7 @@ export function HeroSection() {
       const blobs = gsap.utils.toArray<HTMLElement>("[data-blob]");
       const glow = section.querySelector<HTMLElement>("[data-glow]");
       const dimOpacity = 0.26;
-      const springOut = (value: number) => {
-        const t = gsap.utils.clamp(0, 1, value);
-
-        return 1 - Math.exp(-4.25 * t) * Math.cos(10.5 * t);
-      };
+      const settleFrame = gsap.parseEase("power3.out");
 
       gsap.set(framesList, {
         autoAlpha: 0,
@@ -194,28 +190,30 @@ export function HeroSection() {
           1,
           (progress - stageStart) / (stageEnd - stageStart)
         );
-        const activeIndex = Math.min(
-          frames.length - 1,
-          Math.floor(stageProgress * frames.length)
-        );
         const segment = 1 / frames.length;
+        let activeIndex = 0;
+        let activeScore = -1;
 
         framesList.forEach((frame, index) => {
           const localProgress = (stageProgress - index * segment) / segment;
-          const started = localProgress >= 0;
-          const entranceProgress = gsap.utils.clamp(0, 1, localProgress / 0.62);
-          const exitProgress = gsap.utils.clamp(0, 1, (localProgress - 0.88) / 0.12);
-          const springProgress = springOut(entranceProgress);
-          const frameOpacity = started ? 1 - exitProgress : 0;
-          const x = gsap.utils.interpolate(18, 0, springProgress) + exitProgress * 5;
-          const y = gsap.utils.interpolate(84, 0, springProgress) - exitProgress * 18;
+          const started = localProgress > 0;
+          const fadeInProgress = gsap.utils.clamp(0, 1, (localProgress - 0.02) / 0.24);
+          const entranceProgress = gsap.utils.clamp(0, 1, localProgress / 0.28);
+          const revealProgress = gsap.utils.clamp(0, 1, (localProgress - 0.08) / 0.46);
+          const exitProgress = gsap.utils.clamp(0, 1, (localProgress - 1.04) / 0.18);
+          const settledProgress = settleFrame(entranceProgress);
+          const frameOpacity = fadeInProgress * (1 - exitProgress);
+          const x = gsap.utils.interpolate(10, 0, settledProgress);
+          const y = gsap.utils.interpolate(48, 0, settledProgress) - exitProgress * 12;
           const scale =
-            gsap.utils.interpolate(0.948, 1, springProgress) - exitProgress * 0.012;
-          const revealProgress =
-            localProgress >= 1
-              ? 1
-              : gsap.utils.clamp(0, 1, (localProgress - 0.04) / 0.94);
+            gsap.utils.interpolate(0.985, 1, settledProgress) - exitProgress * 0.008;
           const revealCount = Math.round(frameChars[index].length * revealProgress);
+          const score = frameOpacity * (0.4 + revealProgress * 0.6);
+
+          if (score > activeScore) {
+            activeScore = score;
+            activeIndex = index;
+          }
 
           gsap.set(frame, {
             autoAlpha: frameOpacity,
