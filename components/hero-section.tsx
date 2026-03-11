@@ -24,6 +24,7 @@ const frames = [
 ];
 
 const frameWords = frames.map((frame) => frame.title.split(" "));
+const heroVideoSrc = "/videos/hero-background.mp4";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -245,6 +246,17 @@ export function HeroSection() {
         <div className="hero-sticky">
           <div className="hero-shell" data-shell>
             <div className="hero-backdrop">
+              <video
+                aria-hidden="true"
+                autoPlay
+                className="hero-video"
+                loop
+                muted
+                playsInline
+                preload="auto"
+              >
+                <source src={heroVideoSrc} type="video/mp4" />
+              </video>
               <div className="hero-blob hero-blob-a" data-blob />
               <div className="hero-blob hero-blob-b" data-blob />
               <div className="hero-blob hero-blob-c" data-blob />

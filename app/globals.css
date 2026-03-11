@@ -55,8 +55,8 @@ main {
   overflow: clip;
   border-radius: 34px;
   background:
-    radial-gradient(circle at top left, rgba(255, 248, 233, 0.18), transparent 30%),
-    linear-gradient(140deg, rgba(233, 228, 219, 0.85), rgba(6, 18, 14, 0.32) 20%, rgba(6, 18, 14, 0.94) 60%),
+    radial-gradient(circle at top left, rgba(255, 248, 233, 0.12), transparent 30%),
+    linear-gradient(140deg, rgba(4, 13, 10, 0.4), rgba(4, 13, 10, 0.22) 36%, rgba(4, 13, 10, 0.72) 100%),
     var(--panel);
   color: var(--text);
   transform-origin: center top;
@@ -75,6 +75,25 @@ main {
   overflow: clip;
 }
 
+.hero-backdrop::after {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(5, 15, 11, 0.08), rgba(5, 15, 11, 0.22)),
+    linear-gradient(90deg, rgba(5, 15, 11, 0.28), rgba(5, 15, 11, 0.04) 42%, rgba(5, 15, 11, 0.22));
+  content: "";
+  pointer-events: none;
+}
+
+.hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0.86) contrast(1.04) brightness(0.88);
+}
+
 .hero-grid {
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
@@ -82,7 +101,7 @@ main {
   background-position: center;
   background-size: 72px 72px;
   mask-image: linear-gradient(to bottom, transparent, black 18%, black 82%, transparent);
-  opacity: 0.26;
+  opacity: 0.18;
 }
 
 .hero-glow {
@@ -91,14 +110,14 @@ main {
     radial-gradient(circle at 72% 52%, rgba(255, 238, 189, 0.18), transparent 28%),
     radial-gradient(circle at 50% 80%, rgba(130, 205, 170, 0.22), transparent 34%);
   mix-blend-mode: screen;
-  opacity: 0.5;
+  opacity: 0.34;
 }
 
 .hero-blob {
   position: absolute;
   border-radius: 999px;
-  filter: blur(10px);
-  opacity: 0.94;
+  filter: blur(16px);
+  opacity: 0.24;
   mix-blend-mode: screen;
 }
 
@@ -116,8 +135,8 @@ main {
   width: 72vw;
   height: 42vw;
   background:
-    linear-gradient(180deg, rgba(255, 252, 236, 0.9), rgba(165, 223, 188, 0.34)),
-    radial-gradient(circle at 55% 35%, rgba(12, 22, 18, 0.9), transparent 52%);
+    linear-gradient(180deg, rgba(255, 252, 236, 0.42), rgba(165, 223, 188, 0.12)),
+    radial-gradient(circle at 55% 35%, rgba(12, 22, 18, 0.32), transparent 52%);
   transform: rotate(18deg);
 }
 
@@ -127,8 +146,8 @@ main {
   width: 68vw;
   height: 48vw;
   background:
-    radial-gradient(circle at 40% 35%, rgba(210, 242, 228, 0.92), transparent 35%),
-    linear-gradient(145deg, rgba(16, 46, 36, 0.98), rgba(218, 190, 153, 0.7));
+    radial-gradient(circle at 40% 35%, rgba(210, 242, 228, 0.32), transparent 35%),
+    linear-gradient(145deg, rgba(16, 46, 36, 0.34), rgba(218, 190, 153, 0.22));
   transform: rotate(-18deg);
 }
 
@@ -137,7 +156,7 @@ main {
   width: 42vw;
   height: 22vw;
   background:
-    linear-gradient(145deg, rgba(17, 55, 44, 0.94), rgba(226, 197, 157, 0.86) 54%, rgba(247, 246, 234, 0.24));
+    linear-gradient(145deg, rgba(17, 55, 44, 0.3), rgba(226, 197, 157, 0.22) 54%, rgba(247, 246, 234, 0.08));
   transform: rotate(10deg);
 }
 
@@ -275,8 +294,9 @@ main {
 .hero-scene {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 116px 0 42px;
+  justify-content: flex-start;
+  gap: clamp(42px, 7vh, 72px);
+  padding: 90px 0 42px;
   opacity: 0;
 }
 
@@ -346,7 +366,7 @@ main {
   align-items: center;
   gap: 12px;
   width: fit-content;
-  margin-top: 36px;
+  margin-top: 8px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 999px;
   padding: 16px 18px;
@@ -357,22 +377,23 @@ main {
 
 .hero-stage {
   position: relative;
-  min-height: 50vh;
+  min-height: 52vh;
 }
 
 .hero-frame {
   position: absolute;
   top: 0;
-  right: 0;
-  width: min(100%, 16.5ch);
+  left: clamp(12%, 14vw, 16%);
+  width: min(100%, 21ch);
   margin: 0;
-  font-size: clamp(2.6rem, 4.2vw, 4.8rem);
-  line-height: 0.96;
-  letter-spacing: -0.065em;
+  font-size: clamp(2.25rem, 4vw, 3.65rem);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
   color: rgb(248, 245, 240);
-  text-align: right;
-  text-wrap: balance;
-  transform-origin: top right;
+  text-align: left;
+  text-wrap: pretty;
+  transform-origin: top left;
   will-change: transform, opacity;
 }
 
@@ -466,8 +487,9 @@ main {
   }
 
   .hero-frame {
-    width: min(100%, 14ch);
-    font-size: clamp(2.35rem, 5.2vw, 4rem);
+    left: 0;
+    width: min(100%, 19ch);
+    font-size: clamp(2.15rem, 4.8vw, 3.35rem);
   }
 
   .section-grid {
@@ -525,7 +547,7 @@ main {
   }
 
   .hero-scene {
-    padding: 96px 0 24px;
+    padding: 88px 0 24px;
   }
 
   .hero-scene-top,
@@ -539,13 +561,14 @@ main {
   }
 
   .hero-stage {
-    min-height: 58vh;
+    min-height: 52vh;
   }
 
   .hero-frame {
-    width: min(100%, 12ch);
-    font-size: clamp(2rem, 9.5vw, 3.2rem);
-    line-height: 0.98;
+    left: 0;
+    width: min(100%, 12.5ch);
+    font-size: clamp(1.8rem, 8vw, 2.6rem);
+    line-height: 1.04;
   }
 
   .after-hero {
