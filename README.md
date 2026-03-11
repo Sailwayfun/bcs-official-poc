@@ -91,6 +91,33 @@ The implementation follows the same structure:
    - recreate `SplitText`
    - re-apply the current animation state
 
+## Why SplitText
+
+The current implementation uses local `gsap/SplitText` on purpose.
+
+The earlier approach grouped lines manually from rendered layout. That worked,
+but it recreated behavior that `SplitText` already provides:
+
+- line wrappers
+- char wrappers
+- line masks
+- reliable line re-splitting after layout changes
+
+Using `SplitText` reduced custom state and made the code closer to the
+reference site's actual implementation.
+
+## File Responsibilities
+
+- [components/hero-section.tsx](/Users/liaoweifan/sail-dev/bcs-official-poc/components/hero-section.tsx)
+  owns frame splitting, ScrollTrigger updates, frame enter/exit animation, and
+  active-char brightening.
+- [app/globals.css](/Users/liaoweifan/sail-dev/bcs-official-poc/app/globals.css)
+  defines the frame layout plus the `hero-frame-line`, `hero-frame-char`, and
+  `hero-frame-line-mask` styles that support the SplitText output.
+- [README.md](/Users/liaoweifan/sail-dev/bcs-official-poc/README.md)
+  documents the reverse-engineering process and the current implementation
+  model.
+
 ## Key Parameters
 
 These values were chosen to mirror the reference behavior:
@@ -144,3 +171,6 @@ Next.js project, but it does not literally reuse the reference site's code.
 
 It now uses local `gsap/SplitText` directly, which keeps the animation model
 closer to the reference and removes the previous manual line-grouping logic.
+
+The remaining differences, if any, are more likely to come from scroll timing
+or layout proportions than from the text-splitting model itself.
