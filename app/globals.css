@@ -40,7 +40,6 @@ main {
 
 .hero-section {
   height: 420vh;
-  padding: 14px;
 }
 
 .hero-sticky {
@@ -50,8 +49,8 @@ main {
 }
 
 .hero-shell {
-  position: relative;
-  height: calc(100vh - 28px);
+  position: absolute;
+  inset: 14px;
   overflow: clip;
   border-radius: 34px;
   background:
@@ -383,8 +382,8 @@ main {
 .hero-frame {
   position: absolute;
   top: 0;
-  left: clamp(12%, 14vw, 16%);
-  width: min(100%, 21ch);
+  left: clamp(12%, 14vw, 20%);
+  width: min(100%, 25ch);
   margin: 0;
   font-size: clamp(2.25rem, 4vw, 3.65rem);
   font-weight: 400;
@@ -500,11 +499,10 @@ main {
 @media (max-width: 720px) {
   .hero-section {
     height: 360vh;
-    padding: 10px;
   }
 
   .hero-shell {
-    height: calc(100vh - 20px);
+    inset: 10px;
     border-radius: 24px;
   }
 

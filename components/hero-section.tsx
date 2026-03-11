@@ -82,24 +82,34 @@ export function HeroSection() {
       });
 
       timeline
+        .fromTo(
+          section.querySelector("[data-shell]"),
+          {
+            top: 14,
+            right: 14,
+            bottom: 14,
+            left: 14,
+            borderRadius: 34,
+          },
+          {
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            borderRadius: 0,
+            duration: 0.2,
+          },
+          0
+        )
         .to(
           intro,
           {
             autoAlpha: 0,
             yPercent: -18,
             stagger: 0.04,
-            duration: 0.18,
+            duration: 0.24,
           },
-          0
-        )
-        .to(
-          section.querySelector("[data-shell]"),
-          {
-            borderRadius: 26,
-            scale: 0.985,
-            duration: 0.22,
-          },
-          0
+          0.05
         )
         .fromTo(
           section.querySelector("[data-scene]"),
@@ -108,9 +118,9 @@ export function HeroSection() {
           },
           {
             autoAlpha: 1,
-            duration: 0.16,
+            duration: 0.2,
           },
-          0.1
+          0.16
         )
         .fromTo(
           progressLine,
@@ -119,9 +129,9 @@ export function HeroSection() {
           },
           {
             scaleX: 1,
-            duration: 0.68,
+            duration: 0.74,
           },
-          0.12
+          0.2
         )
         .fromTo(
           progressKnob,
@@ -130,9 +140,9 @@ export function HeroSection() {
           },
           {
             xPercent: 0,
-            duration: 0.68,
+            duration: 0.74,
           },
-          0.12
+          0.2
         )
         .to(
           blobs[0],
@@ -177,8 +187,8 @@ export function HeroSection() {
         );
 
       const updateStage = (progress: number) => {
-        const stageStart = 0.16;
-        const stageEnd = 0.94;
+        const stageStart = 0.26;
+        const stageEnd = 0.965;
         const stageProgress = gsap.utils.clamp(
           0,
           1,
@@ -193,18 +203,18 @@ export function HeroSection() {
         framesList.forEach((frame, index) => {
           const localProgress = (stageProgress - index * segment) / segment;
           const started = localProgress >= 0;
-          const entranceProgress = gsap.utils.clamp(0, 1, localProgress / 0.44);
-          const exitProgress = gsap.utils.clamp(0, 1, (localProgress - 0.74) / 0.26);
+          const entranceProgress = gsap.utils.clamp(0, 1, localProgress / 0.62);
+          const exitProgress = gsap.utils.clamp(0, 1, (localProgress - 0.88) / 0.12);
           const springProgress = springOut(entranceProgress);
           const frameOpacity = started ? 1 - exitProgress : 0;
-          const x = gsap.utils.interpolate(16, 0, springProgress) + exitProgress * 6;
-          const y = gsap.utils.interpolate(72, 0, springProgress) - exitProgress * 24;
+          const x = gsap.utils.interpolate(18, 0, springProgress) + exitProgress * 5;
+          const y = gsap.utils.interpolate(84, 0, springProgress) - exitProgress * 18;
           const scale =
-            gsap.utils.interpolate(0.952, 1, springProgress) - exitProgress * 0.016;
+            gsap.utils.interpolate(0.948, 1, springProgress) - exitProgress * 0.012;
           const revealProgress =
             localProgress >= 1
               ? 1
-              : gsap.utils.clamp(0, 1, localProgress / 0.84);
+              : gsap.utils.clamp(0, 1, (localProgress - 0.04) / 0.94);
           const revealCount = Math.round(frameChars[index].length * revealProgress);
 
           gsap.set(frame, {
